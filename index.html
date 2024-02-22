@@ -38,7 +38,7 @@
   <v-app>
     <v-dialog v-model='showJSON'>
       <v-sheet class='info'>
-        <pre>{{ points }}</pre>
+        <pre>{{ dataExport() }}</pre>
       </v-sheet>
     </v-dialog>
     <v-navigation-drawer
@@ -116,7 +116,7 @@
     const App = defineComponent({
       data: function() {
         return {
-          currentLabel: 1,
+          currentLabel: 0,
           focusedPointId: undefined,
           labels,
           points: [],
@@ -153,7 +153,18 @@
           }
         },
         copyJSON() {
-          navigator.clipboard.writeText(JSON.stringify(this.points));
+          navigator.clipboard.writeText(JSON.stringify(this.dataExport()));
+        },
+        dataExport() {
+          return {
+            meta: {
+              bounds: [[0,0], [800,800]],
+            },
+            data: {
+              points: this.points.map(v => v.pos),
+              labels: this.points.map(v => v.label),
+            }
+          }
         }
       },
       mounted() {
