@@ -1,29 +1,174 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <title>.</title>
-    <meta charset="utf-8" />
-    <link rel="shortcut icon" href="data:image/x-icon;," type="image/x-icon">
-    <style type='text/css'>
-      html, body { height: 100%; border: 0; padding: 0; margin: 0; box-sizing: border-box; }
-      body { display:flex; flex-flow: row wrap; }
-      aside { width: 200px; border: solid 1px #000; }
-      article { flex: 1; border: solid 1px #000; display: flex;  }
-      #canvas { width: 800px; height: 800px; border: solid 1px #000; margin: auto auto; }
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, minimal-ui">
+    <link href="assets/roboto-font.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/@mdi/font@6.x/css/materialdesignicons.min.css" rel="stylesheet">
+    <link href="assets/vuetify.min.css" rel="stylesheet">
+    <script src="assets/vue.global.prod.js"></script>
+    <script src="assets/vuetify.min.js"></script>
+    <style>
+      #canvas { height: 800px; width: 800px; border: solid 1px slateblue; margin: auto auto; }
+      .focused {
+        background-color: lightgray;
+      }
+
+      .v-btn {
+        min-width: 1em;
+        padding: 0;
+        margin: 0;
+      }
+
+      .no-shrink {
+        flex-shrink: 0;
+      }
+
+      .item-list {
+        overflow-y: scroll;
+        font-size: smaller;
+        min-height: 64px;
+      }
+
+      .details-content {
+        max-height: 100%;
+        flex-flow: nowrap;
+        display: flex;
+        flex-direction: column;
+      }
+
+      .focused {
+        background-color: lightgray;
+      }
+
     </style>
-    <script>
-    </script>
   </head>
   <body>
-    <aside>
-      <div>
-        <button>ADD CLASS</button>
+  <div id="app">
+  <v-app>
+    <v-dialog v-model='showJSON'>
+      <v-sheet class='info'>
+        <pre>{{ points }}</pre>
+      </v-sheet>
+    </v-dialog>
+    <v-navigation-drawer
+      permanent
+      app
+      order='2'
+    >
+      <template v-slot:prepend>
+        <v-divider></v-divider>
+        <v-list-item>
+          <v-label>Current Label</v-label>
+          <v-select
+            ref='select'
+            v-model="currentLabel"
+            :items="labels"
+            :multiple='false'
+          ></v-select>
+        </v-list-item>
+        <v-divider></v-divider>
+        <v-list-item class='no-shrink'>
+          <v-label @click='showJSON = !showJSON'>Show JSON</v-label>
+        </v-list-item>
+        <v-divider></v-divider>
+      </template>
+      <v-list class='no-shrink'>
+        <v-list-item>
+          <v-list class='item-list'>
+            <v-list-item v-for='(point, i) in points'
+              style='padding: 0'
+              density='compact'
+              :key='point'
+              :class='{ focused: focusedPointId == point.id }'
+              @click='(e) => focusPoint(point.id, e.target)'
+            >
+              <template v-slot:prepend>
+                  <v-icon :color='colorMap[point.label]'>mdi-map-marker</v-icon>
+              </template>
+              <div class='d-flex flex-nowrap flex-row'>
+                <pre :style="`color: colorMap[point.label]`">&nbsp;{{ point.label }};&nbsp;{{ point.x }},{{ point.y }}</pre>
+                <span style="flex-grow: 100;"></span>
+                <v-btn flat density="compact" :block="false" @click.stop='() => deletePointByIndex(i)'><v-icon>mdi-delete</v-icon></v-btn>
+              </div>
+            </v-list-item>
+          </v-list>
+        </v-list-item>
+        <v-divider></v-divider>
+      </v-list>
+    </v-navigation-drawer>
+    <v-main app class='d-flex'>
+      <div id='canvas' @click='click' ref='canvas' style='position: relative;'>
+        <div v-for='(point, i) in points'
+          :key='i'
+          :style='pointStyle(point)'
+          @click.stop='() => focusPoint(point.id)'
+          :title='point.label'
+        >
+          </div>
       </div>
-      <div>
-
-    </aside>
-    <article>
-      <div id='canvas'></div>
-    </article>
+    </v-main>
+  </v-app>
+  </div>
   </body>
+  <script>
+    const { createApp, defineComponent, nextTick, toRaw } = Vue;
+    const { createVuetify } = Vuetify;
+    const vuetify = createVuetify()
+    const labels = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9];
+    const colorMap = ['red', 'teal', 'purple', 'green', 'blue', 'cyan', 'lime', 'orange', 'yellow', 'brown'];
+    function uuid() {
+      return (new Date()).getTime().toString(36) + Math.random().toString(36).slice(2);
+    }
+    const App = defineComponent({
+      data: function() {
+        return {
+          currentLabel: 1,
+          focusedPointId: undefined,
+          labels,
+          points: [],
+          colorMap,
+          showJSON: false,
+        };
+      },
+      methods: {
+        click(e) {
+          if(!e.target.isEqualNode(toRaw(this.$refs.canvas))) return;
+          this.addPoint(this.currentLabel, e.layerX - 3, e.layerY - 3);
+        },
+        addPoint(label, x, y) {
+          const { offsetLeft, offsetTop } = this.$refs.canvas;
+          const newPoint =  { label, x, y, id: uuid() };
+          this.points = [...this.points, newPoint];
+        },
+        deletePointByIndex(i) {
+          this.points.splice(i,1);
+        },
+        focusPoint(id, el) {
+          this.focusedPointId = id;
+          el?.scrollIntoView({ block: 'nearest' });
+        },
+        pointStyle(point) {
+          return {
+            color: colorMap[point.label],
+            backgroundColor: colorMap[point.label],
+            position: 'absolute',
+            left: `${point.x}px`,
+            top: `${point.y}px`,
+            width: '5px',
+            height: '5px',
+          }
+        }
+      },
+      mounted() {
+        // for(let i of [...this.labels, ...this.labels]) {
+        //   this.addPoint(i%10, 10+10*i, 10+10*i);
+        // }
+      }
+    });
+
+    const app = createApp(App)
+    .use(vuetify)
+    .mount('#app');
+
+  </script>
 </html>
