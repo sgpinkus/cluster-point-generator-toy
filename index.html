@@ -9,24 +9,14 @@
     <script src="assets/vuetify.min.js"></script>
     <style>
       #canvas { height: 800px; width: 800px; border: solid 1px slateblue; margin: auto auto; }
+
       .focused {
         background-color: lightgray;
-      }
-
-      .v-btn {
-        min-width: 1em;
-        padding: 0;
-        margin: 0;
-      }
-
-      .no-shrink {
-        flex-shrink: 0;
       }
 
       .item-list {
         overflow-y: scroll;
         font-size: smaller;
-        min-height: 64px;
       }
 
       .details-content {
@@ -36,10 +26,11 @@
         flex-direction: column;
       }
 
-      .focused {
-        background-color: lightgray;
+      .compact-btn {
+        min-width: 1em;
+        padding: 0;
+        margin: 0;
       }
-
     </style>
   </head>
   <body>
@@ -67,12 +58,15 @@
           ></v-select>
         </v-list-item>
         <v-divider></v-divider>
-        <v-list-item class='no-shrink'>
-          <v-label @click='showJSON = !showJSON'>Show JSON</v-label>
+        <v-list-item style='text-align: center;'>
+          <v-btn style='width: 100%;'><v-label @click='showJSON = !showJSON'>Show JSON</v-label></v-btn>
+        </v-list-item>
+        <v-list-item style='text-align: center;'>
+          <v-btn style='width: 100%;'><v-label @click='copyJSON'>Copy JSON</v-label></v-btn>
         </v-list-item>
         <v-divider></v-divider>
       </template>
-      <v-list class='no-shrink'>
+      <v-list>
         <v-list-item>
           <v-list class='item-list'>
             <v-list-item v-for='(point, i) in points'
@@ -86,9 +80,9 @@
                   <v-icon :color='colorMap[point.label]'>mdi-map-marker</v-icon>
               </template>
               <div class='d-flex flex-nowrap flex-row'>
-                <pre :style="`color: colorMap[point.label]`">&nbsp;{{ point.label }};&nbsp;{{ point.x }},{{ point.y }}</pre>
+                <pre :style="`color: colorMap[point.label]`">&nbsp;{{ point.label }};&nbsp;{{ point.pos[0] }},{{ point.pos[1] }}</pre>
                 <span style="flex-grow: 100;"></span>
-                <v-btn flat density="compact" :block="false" @click.stop='() => deletePointByIndex(i)'><v-icon>mdi-delete</v-icon></v-btn>
+                <v-btn flat density="compact" class='compact-btn' :block="false" @click.stop='() => deletePointByIndex(i)'><v-icon>mdi-delete</v-icon></v-btn>
               </div>
             </v-list-item>
           </v-list>
@@ -137,7 +131,7 @@
         },
         addPoint(label, x, y) {
           const { offsetLeft, offsetTop } = this.$refs.canvas;
-          const newPoint =  { label, x, y, id: uuid() };
+          const newPoint =  { label, pos: [x, y], id: uuid() };
           this.points = [...this.points, newPoint];
         },
         deletePointByIndex(i) {
@@ -152,11 +146,14 @@
             color: colorMap[point.label],
             backgroundColor: colorMap[point.label],
             position: 'absolute',
-            left: `${point.x}px`,
-            top: `${point.y}px`,
+            left: `${point.pos[0]}px`,
+            top: `${point.pos[1]}px`,
             width: '5px',
             height: '5px',
           }
+        },
+        copyJSON() {
+          navigator.clipboard.writeText(JSON.stringify(this.points));
         }
       },
       mounted() {
