@@ -37,9 +37,34 @@
   <div id="app">
   <v-app>
     <v-dialog v-model='showJSON'>
-      <v-sheet class='info'>
+      <v-sheet
+        style="min-width: 50%;"
+      >
         <pre>{{ dataExport() }}</pre>
       </v-sheet>
+    </v-dialog>
+    <v-dialog v-model='showJSONLoader'>
+      <v-card
+        class="mx-auto"
+        style="min-width: 50%;"
+      >
+        <v-textarea
+          v-model="showJSONLoaderText"
+          auto-grow
+          variant="filled"
+          label="JSON"
+          rows="10"
+        ></v-textarea>
+        <v-divider></v-divider>
+        <v-card-actions>
+          <v-spacer></v-spacer>
+          <v-btn
+            @click='loadJSON'
+          >
+            Submit
+          </v-btn>
+        </v-card-actions>
+      </v-card>
     </v-dialog>
     <v-navigation-drawer
       permanent
@@ -63,6 +88,9 @@
         </v-list-item>
         <v-list-item style='text-align: center;'>
           <v-btn style='width: 100%;'><v-label @click='copyJSON'>Copy JSON</v-label></v-btn>
+        </v-list-item>
+        <v-list-item style='text-align: center;'>
+          <v-btn style='width: 100%;'><v-label @click='showJSONLoader = !showJSONLoader'>Upload JSON</v-label></v-btn>
         </v-list-item>
         <v-divider></v-divider>
       </template>
@@ -122,6 +150,8 @@
           points: [],
           colorMap,
           showJSON: false,
+          showJSONLoader: false,
+          showJSONLoaderText: ''
         };
       },
       methods: {
@@ -155,6 +185,9 @@
         copyJSON() {
           navigator.clipboard.writeText(JSON.stringify(this.dataExport()));
         },
+        loadJSON() {
+          this.dataImport(this.showJSONLoaderText)
+        },
         dataExport() {
           return {
             meta: {
@@ -164,6 +197,20 @@
               points: this.points.map(v => v.pos),
               labels: this.points.map(v => v.label),
             }
+          }
+        },
+        dataImport(data) { // TODO: remap to [0,800] bbox.
+          try {
+            data = JSON.parse(data)
+            console.log(data)
+            console.log(data.data.points)
+            if(!data.meta.bounds) throw new Error('No meta')
+            if(data.data.points.length !== data.data.labels.length) throw new Error('Dodgy points and labels')
+            const { points, labels } = data.data;
+            this.points = points.map((v, i) => ({ label: labels[i], pos: v, id: uuid() }));
+          } catch(e) {
+            console.error('Bad data', e)
+            return false
           }
         }
       },
