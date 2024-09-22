@@ -1,1 +1,1 @@
-Created [this simple web app](https://sgpinkus.github.io/cluster-point-generator-toy/) to generate bespoke sets of labeled 2D points useful for testing / validation of clustering, classification, and regression types things.
+Simple [web app](https://sgpinkus.github.io/cluster-point-generator-toy/) to generate labelled 2D point data sets by hand.
